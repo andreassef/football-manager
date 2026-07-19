@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --ink: #12160f;
+  --paper: #f3f5ef;
+  --card: #fbfcf8;
+  --teal: #0f6b66;
+  --teal-dim: #ddebe9;
+  --good: #0ca30c;
+  --good-bg: #e3f5de;
+  --critical: #d03b3b;
+  --critical-bg: #fbe7e4;
+  --warning: #b8790a;
+  --warning-bg: #fbeacb;
+  --void-bg: #e7e7e2;
+
+  --text-1: #12160f;
+  --text-2: #52564d;
+  --text-3: #898781;
+  --border: rgba(18, 22, 15, 0.12);
+  --grid: #e3e6dd;
+}
+
+.dark {
+  --ink: #ecece7;
+  --paper: #101410;
+  --card: #171c15;
+  --teal: #4fbdb5;
+  --teal-dim: #16302e;
+  --good: #38c93f;
+  --good-bg: #163420;
+  --critical: #ef6a63;
+  --critical-bg: #3a1917;
+  --warning: #f0ae3d;
+  --warning-bg: #3a2c11;
+  --void-bg: #23271f;
+
+  --text-1: #f1f2ec;
+  --text-2: #c3c4b9;
+  --text-3: #8b8f84;
+  --border: rgba(255, 255, 255, 0.12);
+  --grid: #2b2f27;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-teal: var(--teal);
+  --color-teal-dim: var(--teal-dim);
+  --color-good: var(--good);
+  --color-good-bg: var(--good-bg);
+  --color-critical: var(--critical);
+  --color-critical-bg: var(--critical-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-void-bg: var(--void-bg);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-border: var(--border);
+  --color-grid: var(--grid);
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+body {
+  background: var(--paper);
+  color: var(--text-1);
+  font-family: -apple-system, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

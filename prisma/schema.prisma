@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------- Auth / multi-tenancy ----------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  currency     String   @default("BRL")
+  locale       String   @default("pt-BR")
+  theme        String   @default("system")
+
+  // bankroll/unit-staking management (see src/app/(app)/bankroll)
+  initialBankroll   Decimal @default(0) @db.Decimal(12, 2)
+  initialUnits      Int     @default(100)
+  defaultStakeUnits Decimal @default(1) @db.Decimal(6, 2)
+
+  // future SaaS fields — present now so no migration is needed later
+  plan             String? @default("FREE")
+  stripeCustomerId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bets Bet[]
+}
+
+// ---------- Shared / global reference catalogs (never per-user) ----------
+
+model Country {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  active Boolean @default(true)
+
+  leagues  League[]
+  referees Referee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model League {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  countryId String?
+  country   Country? @relation(fields: [countryId], references: [id])
+  active    Boolean  @default(true)
+
+  // A team can belong to several leagues at once (e.g. a club plays its national
+  // league and a continental cup) — implicit many-to-many, no exclusivity.
+  teams Team[]
+
+  bets           Bet[]
+  refereedMatches RefereedMatch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Team {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  active Boolean @default(true)
+
+  leagues        League[]
+  playersCurrent Player[] @relation("CurrentTeam")
+
+  betsHome   Bet[] @relation("HomeTeam")
+  betsAway   Bet[] @relation("AwayTeam")
+  betsTarget Bet[] @relation("TargetTeam")
+
+  matchesHome RefereedMatch[] @relation("MatchHomeTeam")
+  matchesAway RefereedMatch[] @relation("MatchAwayTeam")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Player {
+  id            String  @id @default(cuid())
+  name          String
+  // Current club only — no history of past spells is tracked (product decision:
+  // this tool doesn't need to report on a player's team as of a past bet's date).
+  currentTeamId String?
+  currentTeam   Team?   @relation("CurrentTeam", fields: [currentTeamId], references: [id])
+  active        Boolean @default(true)
+
+  bets Bet[] @relation("TargetPlayer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+model Referee {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  // Primary region this referee operates in — informational grouping only; they may
+  // still officiate matches in other regions (RefereedMatch.league carries the real venue).
+  countryId String?
+  country   Country? @relation(fields: [countryId], references: [id])
+  active    Boolean  @default(true)
+
+  matches RefereedMatch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefereedMatch {
+  id         String   @id @default(cuid())
+  refereeId  String
+  leagueId   String
+  homeTeamId String
+  awayTeamId String
+  eventDate  DateTime @db.Date
+  totalFouls Int
+
+  referee  Referee @relation(fields: [refereeId], references: [id])
+  league   League  @relation(fields: [leagueId], references: [id])
+  homeTeam Team    @relation("MatchHomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam Team    @relation("MatchAwayTeam", fields: [awayTeamId], references: [id])
+
+  bets Bet[]
+
+  createdAt DateTime @default(now())
+
+  // A different totalFouls means a different match record (confirmed decision) —
+  // dedup/reuse only happens when every one of these matches exactly.
+  @@unique([refereeId, homeTeamId, awayTeamId, eventDate, totalFouls], name: "uniqueMatch")
+}
+
+model Bookmaker {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  active Boolean @default(true)
+  bets   Bet[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum MarketType {
+  TEAM
+  PLAYER
+  REFEREE
+  GENERAL
+}
+
+model Market {
+  id     String     @id @default(cuid())
+  name   String     @unique
+  type   MarketType
+  active Boolean    @default(true)
+  bets   Bet[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum BetStatus {
+  PENDING
+  WON
+  LOST
+  VOID
+}
+
+// ---------- Owned, per-user data ----------
+
+model Bet {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  marketId    String
+  market      Market    @relation(fields: [marketId], references: [id])
+  leagueId    String
+  league      League    @relation(fields: [leagueId], references: [id])
+  bookmakerId String
+  bookmaker   Bookmaker @relation(fields: [bookmakerId], references: [id])
+
+  homeTeamId String
+  homeTeam   Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId String
+  awayTeam   Team   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  // exactly one of these three is populated, driven by market.type — enforced in Zod
+  targetTeamId String?
+  targetTeam   Team?   @relation("TargetTeam", fields: [targetTeamId], references: [id])
+
+  targetPlayerId String?
+  targetPlayer   Player? @relation("TargetPlayer", fields: [targetPlayerId], references: [id])
+
+  refereedMatchId String?
+  refereedMatch   RefereedMatch? @relation(fields: [refereedMatchId], references: [id])
+
+  odds      Decimal   @db.Decimal(10, 3)
+  stake     Decimal   @db.Decimal(12, 2)
+  eventDate DateTime  @db.Date
+  status    BetStatus @default(PENDING)
+  notes     String?
+
+  // stored/materialized, recomputed on every write from status/odds/stake
+  profit Decimal? @db.Decimal(12, 2)
+  roi    Decimal? @db.Decimal(8, 4)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, eventDate])
+  @@index([userId, status])
+  @@index([marketId])
+  @@index([leagueId])
+  @@index([targetTeamId])
+  @@index([targetPlayerId])
+  @@index([refereedMatchId])
+}

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: marcador-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: marcador
+      POSTGRES_PASSWORD: marcador
+      POSTGRES_DB: football_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - marcador_pgdata:/var/lib/postgresql/data
+
+volumes:
+  marcador_pgdata:

@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "defaultStakeUnits" DECIMAL(6,2) NOT NULL DEFAULT 1,
+ADD COLUMN     "initialBankroll" DECIMAL(12,2) NOT NULL DEFAULT 0,
+ADD COLUMN     "initialUnits" INTEGER NOT NULL DEFAULT 100;
