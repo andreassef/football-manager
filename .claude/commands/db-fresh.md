@@ -17,5 +17,5 @@ Reset the local dev database to a clean, predictable state and reseed it:
 This is destructive to whatever is currently in the local database (including any bets
 or catalog entries added through manual testing in the browser) — that's the point of
 the command, so proceed without asking for extra confirmation. It only ever touches the
-local dev Postgres instance pointed to by `DATABASE_URL` in `.env`, never a shared or
-production database.
+local dev Postgres instance pointed to by `POSTGRES_PRISMA_URL` in `.env`, never a shared
+or production database.

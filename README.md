@@ -19,9 +19,9 @@ Prisma, PostgreSQL, Auth.js, and next-intl (pt-BR default, English switchable).
 
    If you already have Postgres running elsewhere, just point `.env` at it.
 
-2. Copy `.env.example` to `.env` and fill in `DATABASE_URL`/`DIRECT_URL`,
-   `AUTH_SECRET` (generate with `npx auth secret`), and the seed admin
-   credentials.
+2. Copy `.env.example` to `.env` and fill in `POSTGRES_PRISMA_URL`/`DATABASE_URL_UNPOOLED`
+   (these names match what Vercel's Neon integration auto-generates in production),
+   `AUTH_SECRET` (generate with `npx auth secret`), and the seed admin credentials.
 
 3. Install dependencies and set up the database:
 

@@ -24,8 +24,8 @@ jobs:
           --health-retries 10
 
     env:
-      DATABASE_URL: postgresql://marcador:marcador@localhost:5432/football_manager?schema=public
-      DIRECT_URL: postgresql://marcador:marcador@localhost:5432/football_manager?schema=public
+      POSTGRES_PRISMA_URL: postgresql://marcador:marcador@localhost:5432/football_manager?schema=public
+      DATABASE_URL_UNPOOLED: postgresql://marcador:marcador@localhost:5432/football_manager?schema=public
       AUTH_SECRET: ci-secret-not-for-production
       NEXTAUTH_URL: http://localhost:3000
 
@@ -42,8 +42,6 @@ jobs:
       - run: npm run lint
 
       - run: npx tsc --noEmit
-
-      - run: npx prisma migrate deploy
 
       - run: npm test
 

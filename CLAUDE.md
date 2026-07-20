@@ -99,6 +99,12 @@ next-intl, next-themes, Zod, Recharts, Vitest. Hand-rolled Tailwind UI primitive
 - **Hand-rolled Tailwind UI components**, not the shadcn/ui CLI — faster to build
   consistently for this project's specific visual language (see the design mockup
   artifact from the original planning session for the intended look).
+- **DB env vars are named `POSTGRES_PRISMA_URL` / `DATABASE_URL_UNPOOLED`**, not the more
+  conventional `DATABASE_URL` / `DIRECT_URL` — deliberately matching the exact names
+  Vercel's Neon integration auto-generates in production, so deploying never requires
+  manually duplicating a connection string into a differently-named variable. Keep `.env`
+  using these same names locally (pointed at the Docker Postgres instead of Neon) so
+  `schema.prisma`'s `env(...)` calls work unmodified in both places.
 
 ## Gotchas already hit (don't rediscover these)
 
@@ -132,7 +138,7 @@ next-intl, next-themes, Zod, Recharts, Vitest. Hand-rolled Tailwind UI primitive
 - **`prisma migrate dev` refuses to run at all** (even with `--create-only`, even piping
   `yes`) whenever it detects data loss (dropping a non-empty column/table), because the
   CLI is non-interactive in this environment. Work around it by hand: generate the SQL
-  with `prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel
+  with `prisma migrate diff --from-url "$POSTGRES_PRISMA_URL" --to-schema-datamodel
   prisma/schema.prisma --script`, hand-edit it (e.g. to insert a backfill step before a
   column drop), save it as `prisma/migrations/<timestamp>_<name>/migration.sql`, then
   apply with `prisma migrate deploy` (which doesn't prompt).
