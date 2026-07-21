@@ -53,24 +53,34 @@ function rankBy(bets: BetWithRelations[], keyOf: (b: BetWithRelations) => string
   return Array.from(map.values()).sort((a, b) => b.profit - a.profit);
 }
 
+const REFEREE_FOULS_MATCH_WINDOW = 10;
+
 function refereesByFouls(bets: BetWithRelations[]) {
-  const matches = new Map<string, { refereeId: string; refereeName: string; totalFouls: number }>();
+  const matches = new Map<string, { refereeId: string; refereeName: string; eventDate: Date; totalFouls: number }>();
   for (const b of bets) {
     if (!b.refereedMatch) continue;
     matches.set(b.refereedMatch.id, {
       refereeId: b.refereedMatch.refereeId,
       refereeName: b.refereedMatch.referee.name,
+      eventDate: b.refereedMatch.eventDate,
       totalFouls: b.refereedMatch.totalFouls,
     });
   }
-  const byReferee = new Map<string, { name: string; matches: number; fouls: number }>();
+  const byReferee = new Map<string, { name: string; matches: { eventDate: Date; totalFouls: number }[] }>();
   for (const m of matches.values()) {
-    const entry = byReferee.get(m.refereeId) ?? { name: m.refereeName, matches: 0, fouls: 0 };
-    entry.matches += 1;
-    entry.fouls += m.totalFouls;
+    const entry = byReferee.get(m.refereeId) ?? { name: m.refereeName, matches: [] };
+    entry.matches.push({ eventDate: m.eventDate, totalFouls: m.totalFouls });
     byReferee.set(m.refereeId, entry);
   }
-  return Array.from(byReferee.values()).sort((a, b) => b.fouls - a.fouls);
+  return Array.from(byReferee.values())
+    .map((entry) => {
+      const lastMatches = entry.matches
+        .sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime())
+        .slice(0, REFEREE_FOULS_MATCH_WINDOW);
+      const avgFouls = lastMatches.reduce((sum, m) => sum + m.totalFouls, 0) / lastMatches.length;
+      return { name: entry.name, matches: lastMatches.length, avgFouls };
+    })
+    .sort((a, b) => b.avgFouls - a.avgFouls);
 }
 
 function monthKey(date: Date) {

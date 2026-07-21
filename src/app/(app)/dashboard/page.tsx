@@ -125,8 +125,8 @@ export default async function DashboardPage({
                 </thead>
                 <tbody>
                   {stats.referees.map((r) => {
-                    const maxFouls = stats.referees[0].fouls || 1;
-                    const opacity = 0.3 + 0.7 * (r.fouls / maxFouls);
+                    const maxFouls = stats.referees[0].avgFouls || 1;
+                    const opacity = 0.3 + 0.7 * (r.avgFouls / maxFouls);
                     return (
                       <tr key={r.name} className="border-t border-grid">
                         <td className="py-2">
@@ -137,7 +137,7 @@ export default async function DashboardPage({
                           {r.name}
                         </td>
                         <td className="py-2 font-mono tabular-nums text-right">{r.matches}</td>
-                        <td className="py-2 font-mono tabular-nums text-right">{r.fouls}</td>
+                        <td className="py-2 font-mono tabular-nums text-right">{r.avgFouls.toFixed(1)}</td>
                       </tr>
                     );
                   })}
